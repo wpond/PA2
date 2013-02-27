@@ -13,6 +13,7 @@ class Cache:
 		self.readMisses = 0
 		self.writeMisses = 0
 		self.invalidations = 0
+		self.coherenceMisses = 0
 		self.bus = bus
 		self.processor = processor
 		bus.registerCache(self)
@@ -20,6 +21,7 @@ class Cache:
 			self.lines[i] = {
 				"valid": 0, # invalid
 				"tag": 0,
+				"invalidated": False,
 			}
 		
 	def executeCommand(self,cmd):
@@ -34,6 +36,9 @@ class Cache:
 		
 		#print "idx = %d\ntag = %d" % (idx,tag)
 		
+		if self.lines[idx]["tag"] == tag and self.lines[idx]["valid"] == 0 and self.lines[idx]["invalidated"]:
+			self.coherenceMisses += 1
+		
 		if not self.lines[idx]["tag"] == tag or self.lines[idx]["valid"] == 0: # invalid
 			#print "block not in cache"
 			if cmd["RW"] == "R":
@@ -43,6 +48,7 @@ class Cache:
 				self.lines[idx]["valid"] = 2
 				self.writeMisses += 1
 			self.lines[idx]["tag"] = tag
+			self.lines[idx]["invalidated"] = False
 			self.bus.executeCommand(cmd)
 		
 		elif self.lines[idx]["valid"] == 1: # shared
@@ -72,6 +78,7 @@ class Cache:
 			#print "shared in cache"
 			if cmd["RW"] == "W":
 				self.lines[idx]["valid"] = 0
+				self.lines[idx]["invalidated"] = True
 				self.invalidations += 1
 			
 		elif self.lines[idx]["valid"] == 2: # modified
@@ -80,6 +87,7 @@ class Cache:
 				self.lines[idx]["valid"] = 1
 			elif cmd["RW"] == "W":
 				self.lines[idx]["valid"] = 0
+				self.lines[idx]["invalidated"] = True
 				self.invalidations += 1
 		
 	def getSize(self):
@@ -87,7 +95,7 @@ class Cache:
 	
 	# used for testing
 	def getOffset(self,addr):
-		return addr % self.getSize()
+		return addr % self.lineSize
 	
 	def getIndex(self,addr):
 		return (addr / self.lineSize) % self.lineCount
@@ -98,17 +106,22 @@ class Cache:
 	def printStats(self):
 		print
 		print "Processor: %s" % self.processor.getName()
-		header = "| %-18s | %-8s |" % ("Stat","Count")
+		header = "| %-20s | %-8s |" % ("Statistic","Count")
 		print '-' * len(header)
 		print header
 		print '-' * len(header)
-		print "| %-18s | %-8d |" % ("Read Misses",self.readMisses)
-		print "| %-18s | %-8d |" % ("Write Misses",self.writeMisses)
-		print "| %-18s | %-8d |" % ("Invalidations",self.invalidations)
+		print "| %-20s | %-8d |" % ("Read Misses",self.readMisses)
+		print "| %-20s | %-8d |" % ("Write Misses",self.writeMisses)
+		totalMisses = self.writeMisses + self.readMisses
+		print "| %-20s | %-8d |" % ("Total Misses",totalMisses)
+		print '-' * len(header)
+		print "| %-20s | %-8d |" % ("Invalidations",self.invalidations)
+		#print "| %-20s | %-8d |" % ("Coherence Misses",self.coherenceMisses)
+		print "| %-20s | %-8s |" % ("Coherence Misses","%d%%" % (100*(self.coherenceMisses/float(totalMisses))))
 		print '-' * len(header)
 		print
 		print '-' * len(header)
-		print "| %-18s | %-8s |" % ("Line Validity","Count")
+		print "| %-20s | %-8s |" % ("Line Validity","Count")
 		print '-' * len(header)
 		
 		invalid = 0
@@ -122,11 +135,11 @@ class Cache:
 			elif l["valid"] == 2:
 				modified += 1
 		
-		print "| %-18s | %-8d |" % ("Invalid",invalid)
-		print "| %-18s | %-8d |" % ("Shared",shared)
-		print "| %-18s | %-8d |" % ("Modified",modified)
+		print "| %-20s | %-8d |" % ("Invalid",invalid)
+		print "| %-20s | %-8d |" % ("Shared",shared)
+		print "| %-20s | %-8d |" % ("Modified",modified)
 		print '-' * len(header)
-		print "| %-18s | %-8d |" % ("Total",invalid+shared+modified)
+		print "| %-20s | %-8d |" % ("Total",invalid+shared+modified)
 		print '-' * len(header)
 		print
 	
