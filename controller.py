@@ -31,15 +31,16 @@ b = bus.Bus()
 p = processor.Processor("P0",b,CACHE_LINE_SIZE,CACHE_LINE_COUNT)
 c = p.cache
 i = 0
-cmds = {}
+addrs = {}
+addrLines = {}
 for l in f:
 	(proc,rw,addr) = l.split(" ")
 	
 	addr = int(addr)
-	addr -= c.getOffset(addr)
+	idx = addr - c.getOffset(addr)
 	
-	if not addr in cmds:
-		cmds[addr] = {
+	if not addr in addrs:
+		addrs[addr] = {
 			"R": {
 				"P0": 0,
 				"P1": 0,
@@ -53,7 +54,24 @@ for l in f:
 				"P3": 0,
 			}
 		}
-	cmds[addr][rw][proc] += 1
+	addrs[addr][rw][proc] += 1
+	
+	if not idx in addrLines:
+		addrLines[idx] = {
+			"R": {
+				"P0": 0,
+				"P1": 0,
+				"P2": 0,
+				"P3": 0,
+			},
+			"W": {
+				"P0": 0,
+				"P1": 0,
+				"P2": 0,
+				"P3": 0,
+			}
+		}
+	addrLines[idx][rw][proc] += 1
 	
 	i += 1
 	if i % interval == 0:
@@ -68,25 +86,37 @@ sys.stdout.flush()
 privateLineCount = 0 # only accessed by 1 processor
 sharedReadOnly = 0 # only read
 sharedReadWrite = 0 # read and write, multi processors
+
+accessedBy1Proc = 0
 accessedBy2Proc = 0
 accessedByMultiProc = 0
-for addr in cmds.iterkeys():
+for addr in addrs.iterkeys():
 	accessFreqs = [
-		[cmds[addr]["R"]["P0"], cmds[addr]["W"]["P0"]],
-		[cmds[addr]["R"]["P1"], cmds[addr]["W"]["P1"]],
-		[cmds[addr]["R"]["P2"], cmds[addr]["W"]["P2"]],
-		[cmds[addr]["R"]["P3"], cmds[addr]["W"]["P3"]],
+		[addrs[addr]["R"]["P0"], addrs[addr]["W"]["P0"]],
+		[addrs[addr]["R"]["P1"], addrs[addr]["W"]["P1"]],
+		[addrs[addr]["R"]["P2"], addrs[addr]["W"]["P2"]],
+		[addrs[addr]["R"]["P3"], addrs[addr]["W"]["P3"]],
 	]
 	procAccesses = sum(1 for x in accessFreqs if x[0]+x[1] > 0)
 	if procAccesses == 1:
-		privateLineCount += 1
+		accessedBy1Proc += 1
 	elif procAccesses == 2:
 		accessedBy2Proc += 1
 	elif procAccesses > 2:
 		accessedByMultiProc += 1
-	
+
+for addr in addrLines.iterkeys():
+	accessFreqs = [
+		[addrLines[addr]["R"]["P0"], addrLines[addr]["W"]["P0"]],
+		[addrLines[addr]["R"]["P1"], addrLines[addr]["W"]["P1"]],
+		[addrLines[addr]["R"]["P2"], addrLines[addr]["W"]["P2"]],
+		[addrLines[addr]["R"]["P3"], addrLines[addr]["W"]["P3"]],
+	]
+	procAccesses = sum(1 for x in accessFreqs if x[0]+x[1] > 0)
 	readCount = sum(x[0] for x in accessFreqs)
 	writeCount = sum(x[1] for x in accessFreqs)
+	if procAccesses == 1:
+		privateLineCount += 1
 	if procAccesses > 1 and readCount > 0 and writeCount == 0:
 		sharedReadOnly += 1
 	if procAccesses > 1 and readCount > 0 and writeCount > 0:
@@ -97,15 +127,18 @@ print
 print '-' * len(header)
 print header
 print '=' * len(header)
-total = float(len(cmds))
+total = float(len(addrLines))
 print "| %-20s | %8.4f%% |" % ("Private Lines",privateLineCount * 100 / total)
 print "| %-20s | %8.4f%% |" % ("Shared Read Only",sharedReadOnly * 100 / total)
 print "| %-20s | %8.4f%% |" % ("Shared Read Write",sharedReadWrite * 100 / total)
 print '-' * len(header)
+total = float(len(addrs))
+print "| %-20s | %8.4f%% |" % ("Accessed by 1",accessedBy1Proc * 100 / total)
 print "| %-20s | %8.4f%% |" % ("Accessed by 2",accessedBy2Proc * 100 / total)
 print "| %-20s | %8.4f%% |" % ("Accessed by >2",accessedByMultiProc * 100 / total)
 print '-' * len(header)
-print "| %-20s | %-9d |" % ("Unique Lines",len(cmds))
+print "| %-20s | %-9d |" % ("Unique Addresses",len(addrs))
+print "| %-20s | %-9d |" % ("Unique Lines",len(addrLines))
 print '-' * len(header)
 print
 
