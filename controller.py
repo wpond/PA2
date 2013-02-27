@@ -14,7 +14,11 @@ processors = []
 for i in xrange(4):
 	processors.append(processor.Processor("P%d" % i,bus,CACHE_SIZE,CACHE_LINES))
 
-f = open(INPUT,"r")
+try:
+	f = open(INPUT,"r")
+except IOError:
+	print "Unable to open: %s" % INPUT
+	sys.exit(1)
 
 lines = sum(1 for line in f)
 i = 0
