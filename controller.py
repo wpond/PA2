@@ -18,6 +18,8 @@ f = open(INPUT,"r")
 
 lines = sum(1 for line in f)
 i = 0
+interval = lines / 100
+print
 sys.stdout.write("Processing: 0%")
 f.seek(0)
 
@@ -32,12 +34,14 @@ for l in f:
 		if p.getName() == processor:
 			p.executeCommand(cmd)
 	i += 1
-	if i % 1000 == 0:
-		percent = int(50 * i/float(lines))
-		sys.stdout.write("\rProcessing: |%s%s| %d%%" % ('=' * percent,' ' * (50 - percent - 1), percent*2))
+	if i % interval == 0:
+		percent = int(100 * i/float(lines))
+		sys.stdout.write("\rProcessing: |%s%s| %d%%" % ('=' * (percent/2),' ' * (50 - (percent/2) - 1), percent))
 		sys.stdout.flush()
 
-sys.stdout.write("\rProcessing: complete%s\n" % (' ' * 50))
+percent = 50
+sys.stdout.write("\rProcessing: |%s%s| %d%%\n" % ('=' * percent,' ' * (50 - percent - 1), percent*2))
+sys.stdout.flush()
 
 for p in processors:
 	p.cache.printStats()

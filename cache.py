@@ -34,32 +34,23 @@ class Cache:
 		
 		#print "idx = %d\ntag = %d" % (idx,tag)
 		
-		if not self.lines[idx]["tag"] == tag:
+		if not self.lines[idx]["tag"] == tag or self.lines[idx]["valid"] == 0: # invalid
 			#print "block not in cache"
-			if cmd["RW"] == "R":
-				self.readMisses += 1
-			elif cmd["RW"] == "W":
-				self.writeMisses += 1
-			self.lines[idx]["tag"] = tag
-			self.lines[idx]["valid"] = 1
-		
-		elif self.lines[idx]["valid"] == 0: # invalid
-			#print "cache invalid"
 			if cmd["RW"] == "R":
 				self.lines[idx]["valid"] = 1
 				self.readMisses += 1
 			elif cmd["RW"] == "W":
 				self.lines[idx]["valid"] = 2
+				self.writeMisses += 1
 			self.lines[idx]["tag"] = tag
+			self.bus.executeCommand(cmd)
 		
 		elif self.lines[idx]["valid"] == 1: # shared
 			#print "cache shared"
 			if cmd["RW"] == "W":
 				self.lines[idx]["valid"] = 2
-				self.lines[idx]["tag"] = tag
 				self.writeMisses += 1
-		
-		self.bus.executeCommand(cmd)
+				self.bus.executeCommand(cmd)
 		
 		#print
 		
@@ -73,14 +64,10 @@ class Cache:
 		idx = self.getIndex(cmd["address"])
 		tag = self.getTag(cmd["address"])
 		
-		if not self.lines[idx]["tag"] == tag:
+		if not self.lines[idx]["tag"] == tag or self.lines[idx]["valid"] == 0: # invalid
 			#print "not in cache"
 			pass
 		
-		elif self.lines[idx]["valid"] == 0:
-			#print "line not valid"
-			pass
-			
 		elif self.lines[idx]["valid"] == 1: # shared
 			#print "shared in cache"
 			if cmd["RW"] == "W":
