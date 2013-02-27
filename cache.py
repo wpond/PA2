@@ -106,23 +106,25 @@ class Cache:
 	def printStats(self):
 		print
 		print "Processor: %s" % self.processor.getName()
-		header = "| %-20s | %-8s |" % ("Statistic","Count")
+		header = "| %-32s |" % ("Statistics")
 		print '-' * len(header)
 		print header
-		print '-' * len(header)
-		print "| %-20s | %-8d |" % ("Read Misses",self.readMisses)
-		print "| %-20s | %-8d |" % ("Write Misses",self.writeMisses)
+		print '=' * len(header)
 		totalMisses = self.writeMisses + self.readMisses
-		print "| %-20s | %-8d |" % ("Total Misses",totalMisses)
+		print "| %-20s | %-9d |" % ("Read Misses",self.readMisses)
+		print "| %-20s | %-8.4f%% |" % ("Read Misses",self.readMisses * 100 / float(totalMisses))
+		print "| %-20s | %-9d |" % ("Write Misses",self.writeMisses)
+		print "| %-20s | %-8.4f%% |" % ("Write Misses",self.writeMisses * 100 / float(totalMisses))
+		print "| %-20s | %-9d |" % ("Total Misses",totalMisses)
 		print '-' * len(header)
-		print "| %-20s | %-8d |" % ("Invalidations",self.invalidations)
+		print "| %-20s | %-9d |" % ("Invalidations",self.invalidations)
 		#print "| %-20s | %-8d |" % ("Coherence Misses",self.coherenceMisses)
-		print "| %-20s | %-8s |" % ("Coherence Misses","%d%%" % (100*(self.coherenceMisses/float(totalMisses))))
+		print "| %-20s | %-8.4f%% |" % ("Coherence Misses",100*(self.coherenceMisses/float(totalMisses)))
 		print '-' * len(header)
 		print
 		print '-' * len(header)
-		print "| %-20s | %-8s |" % ("Line Validity","Count")
-		print '-' * len(header)
+		print "| %-20s | %-9s |" % ("Line Validity","Count")
+		print '=' * len(header)
 		
 		invalid = 0
 		shared = 0
@@ -135,11 +137,11 @@ class Cache:
 			elif l["valid"] == 2:
 				modified += 1
 		
-		print "| %-20s | %-8d |" % ("Invalid",invalid)
-		print "| %-20s | %-8d |" % ("Shared",shared)
-		print "| %-20s | %-8d |" % ("Modified",modified)
+		print "| %-20s | %-9d |" % ("Invalid",invalid)
+		print "| %-20s | %-9d |" % ("Shared",shared)
+		print "| %-20s | %-9d |" % ("Modified",modified)
 		print '-' * len(header)
-		print "| %-20s | %-8d |" % ("Total",invalid+shared+modified)
+		print "| %-20s | %-9d |" % ("Total",invalid+shared+modified)
 		print '-' * len(header)
 		print
 	

@@ -9,11 +9,6 @@ CACHE_LINE_SIZE = int(sys.argv[2])
 CACHE_LINE_COUNT = int(sys.argv[3])
 INPUT = sys.argv[1]
 
-bus = bus.Bus()
-processors = []
-for i in xrange(4):
-	processors.append(processor.Processor("P%d" % i,bus,CACHE_LINE_SIZE,CACHE_LINE_COUNT))
-
 try:
 	f = open(INPUT,"r")
 except IOError:
@@ -32,11 +27,16 @@ print
 
 sys.stdout.write("Analysing\t0%")
 f.seek(0)
+b = bus.Bus()
+p = processor.Processor("P0",b,CACHE_LINE_SIZE,CACHE_LINE_COUNT)
+c = p.cache
+i = 0
 cmds = {}
 for l in f:
-	(processor,rw,addr) = l.split(" ")
+	(proc,rw,addr) = l.split(" ")
 	
 	addr = int(addr)
+	addr -= c.getOffset(addr)
 	
 	if not addr in cmds:
 		cmds[addr] = {
@@ -53,7 +53,7 @@ for l in f:
 				"P3": 0,
 			}
 		}
-	cmds[addr][rw][processor] += 1
+	cmds[addr][rw][proc] += 1
 	
 	i += 1
 	if i % interval == 0:
@@ -92,19 +92,27 @@ for addr in cmds.iterkeys():
 	if procAccesses > 1 and readCount > 0 and writeCount > 0:
 		sharedReadWrite += 1
 
-header = "| %-26s |" % ("Memory Accesses")
+header = "| %-32s |" % ("Memory Accesses")
 print
 print '-' * len(header)
 print header
-print '-' * len(header)
+print '=' * len(header)
 total = float(len(cmds))
-print "| %-20s | %2d%% |" % ("Private Lines",privateLineCount * 100 / total)
-print "| %-20s | %2d%% |" % ("Shared Read Only",sharedReadOnly * 100 / total)
-print "| %-20s | %2d%% |" % ("Shared Read Write",sharedReadWrite * 100 / total)
-print "| %-20s | %2d%% |" % ("Accessed by 2",accessedBy2Proc * 100 / total)
-print "| %-20s | %2d%% |" % ("Accessed by >2",accessedByMultiProc * 100 / total)
+print "| %-20s | %8.4f%% |" % ("Private Lines",privateLineCount * 100 / total)
+print "| %-20s | %8.4f%% |" % ("Shared Read Only",sharedReadOnly * 100 / total)
+print "| %-20s | %8.4f%% |" % ("Shared Read Write",sharedReadWrite * 100 / total)
+print '-' * len(header)
+print "| %-20s | %8.4f%% |" % ("Accessed by 2",accessedBy2Proc * 100 / total)
+print "| %-20s | %8.4f%% |" % ("Accessed by >2",accessedByMultiProc * 100 / total)
+print '-' * len(header)
+print "| %-20s | %-9d |" % ("Unique Lines",len(cmds))
 print '-' * len(header)
 print
+
+bus = bus.Bus()
+processors = []
+for i in xrange(4):
+	processors.append(processor.Processor("P%d" % i,bus,CACHE_LINE_SIZE,CACHE_LINE_COUNT))
 
 sys.stdout.flush()
 sys.stdout.write("Processing\t0%")
