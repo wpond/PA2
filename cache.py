@@ -110,12 +110,14 @@ class Cache:
 		print '-' * len(header)
 		print header
 		print '=' * len(header)
-		totalMisses = self.writeMisses + self.readMisses
+		totalMisses = max(1,self.writeMisses + self.readMisses)
 		print "| %-20s | %-9d |" % ("Read Misses",self.readMisses)
 		print "| %-20s | %-8.4f%% |" % ("Read Misses",self.readMisses * 100 / float(totalMisses))
 		print "| %-20s | %-9d |" % ("Write Misses",self.writeMisses)
 		print "| %-20s | %-8.4f%% |" % ("Write Misses",self.writeMisses * 100 / float(totalMisses))
+		totalMisses = self.writeMisses + self.readMisses
 		print "| %-20s | %-9d |" % ("Total Misses",totalMisses)
+		totalMisses = max(1,self.writeMisses + self.readMisses)
 		print '-' * len(header)
 		print "| %-20s | %-9d |" % ("Invalidations",self.invalidations)
 		#print "| %-20s | %-8d |" % ("Coherence Misses",self.coherenceMisses)

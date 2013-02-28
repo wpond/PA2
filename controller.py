@@ -22,7 +22,7 @@ print "%-20s%s" % ("CACHE LINE COUNT",CACHE_LINE_COUNT)
 print "%-20s%s" % ("CACHE SIZE",CACHE_LINE_SIZE * CACHE_LINE_COUNT)
 
 lines = sum(1 for line in f)
-interval = lines / 100
+interval = max(lines / 100,1)
 print
 
 sys.stdout.write("Analysing\t0%")
@@ -127,7 +127,7 @@ print
 print '-' * len(header)
 print header
 print '=' * len(header)
-total = float(len(addrLines))
+total = float(max(1,len(addrLines)))
 print "| %-20s | %8.4f%% |" % ("Private Lines",privateLineCount * 100 / total)
 print "| %-20s | %8.4f%% |" % ("Shared Read Only",sharedReadOnly * 100 / total)
 print "| %-20s | %8.4f%% |" % ("Shared Read Write",sharedReadWrite * 100 / total)
@@ -170,6 +170,8 @@ for l in f:
 percent = 50
 sys.stdout.write("\rProcessing\t|%s%s| %d%%\n" % ('=' * percent,' ' * (50 - percent - 1), percent*2))
 sys.stdout.flush()
+
+
 
 for p in processors:
 	p.cache.printStats()

@@ -1,0 +1,9 @@
+The simulator has been tested in Python 2.7 and Python 2.6 (DICE).
+
+To run the simulator use a command in the following form:
+
+	python controller.py trace1.out 4 128
+
+Where the simulator should use trace file trace1.out with a line size of 4 and a line count of 128.
+
+There are test files and their outputs located in the tests folder. These are related to the tests discussed in the validity section of the report.
